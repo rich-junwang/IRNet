@@ -109,7 +109,6 @@ class IRNet(BasicModel):
 
         table_appear_mask = batch.table_appear_mask
 
-
         src_encodings, (last_state, last_cell) = self.encode(batch.src_sents, batch.src_sents_len, None)
 
         src_encodings = self.dropout(src_encodings)
