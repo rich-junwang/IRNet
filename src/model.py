@@ -14,7 +14,11 @@ from dataset import Batch
 from pointer_net import PointerNet
 from nn_utils import MultiHeadAttention, EncoderLayer, get_attn_key_pad_mask, get_non_pad_mask
 from rule import define_rule
-import copy
+
+from seq2seq import seq2seq_utils
+from seq2seq import seq2seq_state_utils
+from seq2seq import seq2seq_model, seq2seq_utils
+
 from utils import build_sketch_adjacency_matrix, get_parent_actions
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.modeling import BertModel
@@ -53,6 +57,10 @@ class Seq2Tree(nn.Module):
                                    dropout=0.2, bidirectional=True).cuda()
 
 
+        self.shared = nn.Embedding(vocab_size, bart_config.d_model, padding_idx)  # shared embedding layer
+        self.encoder = seq2seq_model.TransformerEncoder(bart_config, self.shared)
+        self.decoder = seq2seq_model.TransformerDecoder(bart_config, self.shared)
+
         if args.cuda:
             self.new_long_tensor = torch.cuda.LongTensor
             self.new_tensor = torch.cuda.FloatTensor
@@ -78,9 +86,25 @@ class Seq2Tree(nn.Module):
 
             self.sketch_decoder_lstm = nn.LSTMCell(input_dim, args.hidden_size)
 
-        self.tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=True)
-        self.bertModel = BertModel.from_pretrained(args.bert_model)
-        self.bertModel.to(device)
+        if args.use_bart:
+            model_path = os.path.join(args.pretrained_path, "pytorch_model.bin")
+            if os.path.exists(model_path):
+                print("Loading pretrained model from %s" % model_path)
+                state_dict = torch.load(model_path, map_location='cpu')
+                missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
+                if len(missing_keys) > 0:
+                    print("======Missing keys=======")
+                    for missing_key in missing_keys:
+                        print(missing_key)
+
+                if len(unexpected_keys) > 0:
+                    print("======Unexpected keys=======")
+                    for unexpected_key in unexpected_keys:
+                        print(unexpected_key)
+                print("DONE!")
+        else:
+            self.tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=True)
+            self.bertModel = BertModel.from_pretrained(args.bert_model)
 
         # initialize the decoder's state and cells with encoder hidden states
         self.decoder_cell_init = nn.Linear(args.hidden_size, args.hidden_size)
@@ -93,7 +117,6 @@ class Seq2Tree(nn.Module):
 
         self.sketch_begin_vec = Variable(self.new_tensor(self.sketch_decoder_lstm.input_size))
         self.lf_begin_vec = Variable(self.new_tensor(self.lf_decoder_lstm.input_size))
-
 
         self.prob_att = nn.Linear(args.att_vec_size, 1)
         self.prob_len = nn.Linear(1, 1)

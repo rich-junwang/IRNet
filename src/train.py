@@ -62,7 +62,8 @@ def init_arg_parser():
     arg_parser.add_argument('--sentence_features', action='store_true', help='use sentence features')
     arg_parser.add_argument('--stanford_tokenized', action='store_true', help='use stanford tokenization')
 
-    arg_parser.add_argument('--bert_model', default='bert-base-uncased', type=str, help='bert_model')
+    arg_parser.add_argument('--pretrained_path', default='bert-base-uncased', type=str, help='pretrained model path')
+    arg_parser.add_argument('--use_bart', action='store_true', default=False, help='whether to use bart model')
     arg_parser.add_argument('--encoder_dim', default=768, type=int, help='size of encoder_dim')
 
     arg_parser.add_argument('--action_embed_size', default=64, type=int, help='size of word embeddings')
