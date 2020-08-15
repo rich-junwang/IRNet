@@ -57,9 +57,9 @@ class Seq2Tree(nn.Module):
                                    dropout=0.2, bidirectional=True).cuda()
 
 
-        self.shared = nn.Embedding(vocab_size, bart_config.d_model, padding_idx)  # shared embedding layer
-        self.encoder = seq2seq_model.TransformerEncoder(bart_config, self.shared)
-        self.decoder = seq2seq_model.TransformerDecoder(bart_config, self.shared)
+        # self.shared = nn.Embedding(vocab_size, bart_config.d_model, padding_idx)  # shared embedding layer
+        # self.encoder = seq2seq_model.TransformerEncoder(bart_config, self.shared)
+        # self.decoder = seq2seq_model.TransformerDecoder(bart_config, self.shared)
 
         if args.cuda:
             self.new_long_tensor = torch.cuda.LongTensor

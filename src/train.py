@@ -13,7 +13,7 @@ import copy
 import torch
 from tqdm import tqdm
 from collections import OrderedDict
-from model import Seq2Tree as TableSeq2Tree
+from model import Seq2Tree
 from rule import define_rule
 import nn_utils
 from utils import GloveHelper, load_dataset, epoch_train, epoch_acc
@@ -170,7 +170,7 @@ def init_arg_parser():
     return arg_parser
 
 
-def init_config():
+def init_config(arg_parser):
     args = arg_parser.parse_args()
 
     # seed the RNG
@@ -181,6 +181,7 @@ def init_config():
     random.seed(int(args.seed))
 
     return args
+
 
 def save_checkpoint(model, checkpoint_name):
     torch.save(model.state_dict(), checkpoint_name)
@@ -196,10 +197,8 @@ def init_log_checkpoint_path():
 
 
 def build_model(model_name, args, vocab, grammar, **kwargs):
-    if model_name == 'transformer':
-        model = TransformerSeq2Tree(args, vocab, grammar)
-    elif model_name == 'table':
-        model = TableSeq2Tree(args, vocab, grammar, kwargs['table_vocab'])
+    if model_name == 'table':
+        model = Seq2Tree(args, vocab, grammar, kwargs['table_vocab'])
     else:
         model = None
     return model
@@ -235,7 +234,7 @@ def train(args):
     :param args:
     :return:
     """
-    vocab = pickle.load(open('./vocab.pkl', 'rb'))
+
 
     if args.pos_tag and len(args.pos_tag) > 0:
         with open(args.pos_tag, 'r', encoding='utf8') as f:
@@ -353,6 +352,6 @@ def train(args):
 
 if __name__ == '__main__':
     arg_parser = init_arg_parser()
-    args = init_config()
+    args = init_config(arg_parser)
     print(args)
     train(args)
